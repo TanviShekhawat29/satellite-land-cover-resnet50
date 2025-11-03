@@ -1,0 +1,7 @@
+streamlit
+tensorflow
+numpy
+Pillow
+keras
+h5py
+tensorflow-datasets
