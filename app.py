@@ -7,6 +7,8 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Flatten, Dense, Dropout
 import io
 
+# --- CRITICAL CONFIGURATION ---
+# POINTS TO THE NEW, CLEAN WEIGHTS FILE (resolved naming conflict)
 MODEL_PATH = 'satellite_resnet_weights_clean.weights.h5' 
 IMG_SIZE = 64
 NUM_CLASSES = 10
@@ -23,8 +25,9 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# --- MODEL ARCHITECTURE DEFINITION (Replicated from Training Script) ---
 def build_resnet50_model(input_shape, num_classes):
-    
+    """Builds the empty ResNet50 architecture."""
     conv_base = ResNet50(
         weights='imagenet',
         include_top=False,
@@ -41,25 +44,31 @@ def build_resnet50_model(input_shape, num_classes):
     ])
     return model
 
+# --- 1. MODEL LOADING (Final Robust Fix) ---
 @st.cache_resource
 def load_model_and_classes():
-    
+    """Builds the architecture and loads weights to bypass mismatch errors."""
     try:
         tf.get_logger().setLevel('ERROR') 
-    
+        
+        # 1. Build the empty architecture
         input_shape = (IMG_SIZE, IMG_SIZE, 3) 
         model = build_resnet50_model(input_shape, NUM_CLASSES)
 
+        # 2. Load the trained weights onto the matching structure
+        # This uses the correct load_weights method for the clean file.
         model.load_weights(MODEL_PATH)
             
         return model, CLASSES
     except Exception as e:
+        # If this fails, it means the file wasn't found or the architecture doesn't match
         st.error(f"Failed to load AI Model: {e}")
-        st.warning(f"CRITICAL: Ensure '{MODEL_PATH}' was pushed via Git LFS and the name is correct.")
+        st.warning(f"CRITICAL: Ensure '{MODEL_PATH}' was pushed via Git LFS.")
         return None, None
 
 model, CLASSES = load_model_and_classes()
 
+# --- 2. PREDICTION LOGIC ---
 def predict_image(image, model):
     
     img = image.resize((IMG_SIZE, IMG_SIZE))
@@ -67,7 +76,8 @@ def predict_image(image, model):
     img_array = np.expand_dims(img_array, axis=0)
 
     predictions = model.predict(img_array, verbose=0)[0]
-
+    
+    # Get top 3 predictions
     top_3_indices = np.argsort(predictions)[::-1][:3]
     results = []
     
@@ -78,6 +88,7 @@ def predict_image(image, model):
         
     return results
 
+# --- 3. STREAMLIT UI ---
 def main():
     st.title("🌟 ResNet50 Satellite Classifier ($\mathbf{90\%+}$ Accuracy)")
     st.subheader("B.Tech AI/DL: Transfer Learning Fine-Tuning")
