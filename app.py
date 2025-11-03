@@ -29,7 +29,8 @@ st.set_page_config(
 def build_resnet50_model(input_shape, num_classes):
     """Builds the empty ResNet50 architecture."""
     conv_base = ResNet50(
-        weights='imagenet',
+        # CRITICAL FIX: Load weights=None here to avoid a conflict when loading custom weights
+        weights=None, 
         include_top=False,
         input_shape=input_shape
     )
@@ -56,7 +57,7 @@ def load_model_and_classes():
         model = build_resnet50_model(input_shape, NUM_CLASSES)
 
         # 2. Load the trained weights onto the matching structure
-        # This uses the correct load_weights method for the clean file.
+        # This includes the adapted ResNet base weights.
         model.load_weights(MODEL_PATH)
             
         return model, CLASSES
